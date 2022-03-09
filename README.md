@@ -17,6 +17,7 @@ Command wrapper capable of being invoked remotely or automatically executed
   * 因为是通过系统调用实现程序的代理调用，处于安全考虑对外部调用的API需要进行白名单配置，没有配置的默认不可执行；
 * 内部命令执行
   * 开放全功能，可通过配置文件配置保存；
+  * 可借助原程序的私钥库功能，管理执行多账户操作；
 * 外部调用API
   * health检测接口
   * 仅可执行单次调用命令；
