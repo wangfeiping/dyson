@@ -27,4 +27,4 @@ Command wrapper capable of being invoked remotely or automatically executed
   * prometheus exporter统计执行警告及异常数量；
   * 各功能可用性，健康度；
   * 内部命令及外部调用执行统计数；
-  * 通过配置命令生成监控指标？
+  * 通过配置命令生成监控指标？如：新提案
