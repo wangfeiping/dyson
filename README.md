@@ -1,4 +1,4 @@
-# lever
+# Dyson
 Command wrapper capable of being invoked remotely or automatically executed
 
 本项目目的是为了提供自动维护和管理(周期自动)账户资产(比如查询并委托账户资产)，同时提供外部调用(单次)功能(比如提交交易)，但无需每次输入密码解锁秘钥。
