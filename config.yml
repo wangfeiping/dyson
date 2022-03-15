@@ -1,0 +1,13 @@
+command:
+# 可根据执行命令返回json结果，获取数据，数据会在一次周期执行中缓存，执行周期结束当前缓存数据会清空
+- exec: '/apps/cosmos/release/gaiad q bank balances cosmos1l9h40lx2e2049v5e27xnnx6cp096qv8ce4adxj --output json'
+  parser: '$.balances[0].amount'
+# 可根据执行命令返回json结果，解析数据并生成监控指标
+- exec: '/apps/cosmos/release/gaiad q gov proposals --output json --count-total --limit 10 --status voting_period'
+  parser: '$.proposals[0].voting_start_time'
+  parser: '$.proposals[0].voting_end_time'
+  parser: '$.proposals[0].proposol_id'
+  exporter: 'proposal{"chain_id":"xxx","voting_start_time":"${voting_start_time}","voting_end_time":"${voting_end_time}"} ${proposol_id}'
+# 可根据之前缓存的数据，编写表达式，表达式为真则可执行当前命令
+- expr: '${amount} > 5000000'
+  exec: '/apps/cosmos/release/gaiad tx staking delegate ...'
