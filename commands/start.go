@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/yalp/jsonpath"
 
+	"github.com/wangfeiping/dyson/config"
 	"github.com/wangfeiping/log"
 )
 
@@ -71,19 +72,20 @@ func doJob() {
 
 	// {"balances":[{"denom":"uatom","amount":"1012728"}],"pagination":{"next_key":null,"total":"0"}}
 
+	config.Save()
 }
 
 // NewStartCommand 创建 start/服务启动 命令
 func NewStartCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   CmdStart,
+		Use:   config.CmdStart,
 		Short: "Start",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return commandRunner(starter, true)
 		},
 	}
 
-	cmd.Flags().Int64P(FlegDuration, "d", 30, "The cycle time of the watch task")
-	cmd.Flags().StringP(FlagListen, "l", ":9900", "The listening address(ip:port) of exporter")
+	cmd.Flags().Int64P(config.FlegDuration, "d", 30, "The cycle time of the watch task")
+	cmd.Flags().StringP(config.FlagListen, "l", ":9900", "The listening address(ip:port) of exporter")
 	return cmd
 }

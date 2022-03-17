@@ -11,34 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/wangfeiping/dyson/config"
 	"github.com/wangfeiping/log"
-)
-
-// nolint
-const (
-	CmdRoot          = "dyson"
-	CmdStart         = "start"
-	CmdAdd           = "add"
-	CmdCall          = "call"
-	CmdConfig        = "config"
-	CmdVersion       = "version"
-	CmdHelp          = "help"
-	ShortDescription = "Command wrapper capable of being invoked remotely or automatically executed"
-)
-
-// nolint
-const (
-	FlagLog      = "log"
-	FlagConfig   = "config"
-	FlagListen   = "listen"
-	FlagAlias    = "alias"
-	FlagURL      = "url"
-	FlagBody     = "body"
-	FlagMethod   = "method"
-	FlagRegex    = "regex"
-	FlegDuration = "duration"
-	FlagService  = "service"
-	FlagVersion  = CmdVersion
 )
 
 // Runner is command call function
@@ -47,10 +22,10 @@ type Runner func() (context.CancelFunc, error)
 // NewRootCommand returns root command
 func NewRootCommand(versioner Runner) *cobra.Command {
 	root := &cobra.Command{
-		Use:   CmdRoot,
-		Short: ShortDescription,
+		Use:   config.CmdRoot,
+		Short: config.ShortDescription,
 		Run: func(cmd *cobra.Command, args []string) {
-			if viper.GetBool(FlagVersion) {
+			if viper.GetBool(config.FlagVersion) {
 				versioner()
 				return
 			}
@@ -62,15 +37,15 @@ func NewRootCommand(versioner Runner) *cobra.Command {
 				return err
 			}
 
-			if strings.EqualFold(cmd.Use, CmdRoot) ||
-				strings.EqualFold(cmd.Use, CmdVersion) {
+			if strings.EqualFold(cmd.Use, config.CmdRoot) ||
+				strings.EqualFold(cmd.Use, config.CmdVersion) {
 				// doesn't need init config & log
 				return nil
 			}
 
 			initConfig()
 
-			if !strings.EqualFold(cmd.Use, CmdStart) {
+			if !strings.EqualFold(cmd.Use, config.CmdStart) {
 				// doesn't need init log
 				return nil
 			}
@@ -81,14 +56,14 @@ func NewRootCommand(versioner Runner) *cobra.Command {
 		},
 	}
 
-	root.Flags().BoolP(FlagVersion, "v", false, "show version info")
-	root.PersistentFlags().StringP(FlagConfig, "c", "./config.yml", "config file path")
+	root.Flags().BoolP(config.FlagVersion, "v", false, "show version info")
+	root.PersistentFlags().StringP(config.FlagConfig, "c", "./config.yml", "config file path")
 
 	return root
 }
 
 func initConfig() error {
-	viper.SetConfigFile(viper.GetString(FlagConfig))
+	viper.SetConfigFile(viper.GetString(config.FlagConfig))
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
@@ -153,13 +128,4 @@ func keepRunning(callback func(sig os.Signal)) {
 		log.Flush()
 		os.Exit(1)
 	}
-}
-
-func serviceFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP(FlagURL, "u", "", "request url")
-	cmd.Flags().StringP(FlagBody, "b", "", "request body")
-	cmd.Flags().StringP(FlagAlias, "a", "", "service alias")
-	cmd.Flags().StringP(FlagMethod, "m", "GET", "http method")
-	cmd.Flags().StringP(FlagRegex, "r", "GET", "match regex")
-
 }
