@@ -1,12 +1,15 @@
 package commands
 
 import (
+	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/yalp/jsonpath"
 
 	"github.com/wangfeiping/dyson/config"
 	"github.com/wangfeiping/log"
@@ -21,63 +24,47 @@ var starter = func() (cancel context.CancelFunc, err error) {
 }
 
 func doJob() {
-	log.Debug("Exec: ")
-
-	// ./gaiad q gov proposals --output json --count-total --limit 10 --status voting_period
-	jsonStr := `{"proposals":[
-				{"proposal_id":"62",
-					"content":{
-						"@type":"/cosmos.gov.v1beta1.TextProposal",
-						"title":"Signal Proposal: Migration of Gravity DEX to a Separate Cosmos Chain",
-						"description":"..."},
-					"status":"PROPOSAL_STATUS_VOTING_PERIOD",
-					"final_tally_result":{"yes":"0","abstain":"0","no":"0","no_with_veto":"0"},
-					"submit_time":"2022-03-14T09:43:54.403555411Z",
-					"deposit_end_time":"2022-03-28T09:43:54.403555411Z",
-					"total_deposit":[{"denom":"uatom","amount":"64000000"}],
-					"voting_start_time":"2022-03-14T09:43:54.403555411Z",
-					"voting_end_time":"2022-03-28T09:43:54.403555411Z"}],
-				"pagination":{"next_key":null,"total":"1"}}`
-	// jsonStr := "{}"
-	// filter, err := jsonpath.Prepare("$..proposal_id")
-	// filter, err := jsonpath.Prepare("$.proposals[*].voting_start_time")
-	filter, err := jsonpath.Prepare("$.proposals[0].voting_start_time")
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	var data interface{}
-	if err = json.Unmarshal([]byte(jsonStr), &data); err != nil {
-		log.Error(err)
-		return
-	}
-	out, err := filter(data)
-	if err != nil {
-		log.Error("filter error: ", err)
-		return
-	}
-	fmt.Println("voting_start_time: ", out)
-
-	filter, err = jsonpath.Prepare("$.proposals[0].proposal_id")
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	out, err = filter(data)
-	if err != nil {
-		log.Error("filter error: ", err)
-		return
-	}
-	fmt.Println("proposal_id", out)
-
-	// {"balances":[{"denom":"uatom","amount":"1012728"}],"pagination":{"next_key":null,"total":"0"}}
-
-	// config.Save()
 	config.Load()
 	execs := config.GetAll()
 
-	for _, exec := range execs {
-		log.Info("exec command: ", exec.Command)
+	for _, exe := range execs {
+		log.Info("execute: ", exe.Command)
+		params := strings.Split(exe.Command, " ")
+		cmd := exec.Command(params[0], params[1:]...)
+		// fmt.Println("exec ", cmd.Args)
+		// StdoutPipe方法返回一个在命令Start后与命令标准输出关联的管道。
+		// Wait方法获知命令结束后会关闭这个管道，一般不需要显式的关闭该管道。
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			log.Error("cmd.StdoutPipe err: ", err)
+			return
+		}
+
+		cmd.Stderr = os.Stderr
+		// cmd.Dir = dir
+		err = cmd.Start()
+		// err = cmd.Run()
+		if err != nil {
+			log.Error("cmd.Start err: ", err)
+			return
+		}
+
+		//创建一个流来读取管道内内容这里逻辑是通过一行一行的读取的
+		reader := bufio.NewReader(stdout)
+		//实时循环读取输出流中的一行内容
+		for {
+			line, err2 := reader.ReadString('\n')
+			if err2 != nil || io.EOF == err2 {
+				log.Debug("Stdout EOF!")
+				break
+			}
+			fmt.Println("Readed: ", line)
+		}
+
+		err = cmd.Wait()
+		if err != nil {
+			log.Error("cmd.Wait err: ", err)
+		}
 	}
 
 }
