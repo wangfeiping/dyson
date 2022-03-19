@@ -22,7 +22,7 @@ func main() {
 	viper.BindPFlag(log.FlagSize, rootCmd.PersistentFlags().Lookup(log.FlagSize))
 
 	rootCmd.AddCommand(
-		// commands.NewStartCommand(starter, true),
+		commands.NewStartCommand(),
 		// commands.NewAddCommand(addHandler),
 		// commands.NewCallCommand(callHandler),
 		commands.NewVersionCommand(versioner))

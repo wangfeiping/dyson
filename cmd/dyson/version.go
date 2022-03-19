@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/wangfeiping/dyson/commands"
+	"github.com/wangfeiping/dyson/config"
 )
 
 // nolint
@@ -24,7 +24,7 @@ compile:	%s
 go version:	%s
 `
 
-	fmt.Printf(s, commands.ShortDescription, Version, GitCommit, BuidDate, GoVersion)
+	fmt.Printf(s, config.ShortDescription, Version, GitCommit, BuidDate, GoVersion)
 
 	return nil, nil
 }
