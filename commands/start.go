@@ -72,7 +72,14 @@ func doJob() {
 
 	// {"balances":[{"denom":"uatom","amount":"1012728"}],"pagination":{"next_key":null,"total":"0"}}
 
-	config.Save()
+	// config.Save()
+	config.Load()
+	execs := config.GetAll()
+
+	for _, exec := range execs {
+		log.Info("exec command: ", exec.Command)
+	}
+
 }
 
 // NewStartCommand 创建 start/服务启动 命令
