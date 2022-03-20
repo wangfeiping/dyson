@@ -3,6 +3,8 @@ package commands
 import (
 	"bufio"
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/yalp/jsonpath"
 
 	"github.com/wangfeiping/dyson/config"
 	"github.com/wangfeiping/log"
@@ -85,17 +88,44 @@ func doJob() {
 			return
 		}
 
+		cache := config.GetCache()
+
 		//创建一个流来读取管道内内容这里逻辑是通过一行一行的读取的
 		reader := bufio.NewReader(stdout)
 		//实时循环读取输出流中的一行内容
 		for {
-			line, err2 := reader.ReadString('\n')
+			jsonStr, err2 := reader.ReadString('\n')
 			if err2 != nil || io.EOF == err2 {
 				log.Debug("Command stdout EOF!")
 				break
 			}
-			log.Debug("Result: ", line)
+			log.Debug("Result: ", jsonStr)
+
+			for _, parser := range exe.Parser {
+				log.Debug("Parser: ", parser)
+				// if strings.ContainsRune(parser, '=') {
+				i := strings.LastIndex(parser, ".")
+				name := parser[i+1:]
+				filter, err := jsonpath.Prepare(parser)
+				if err != nil {
+					log.Error("jsonpath prepare err: ", err)
+					return
+				}
+				var data interface{}
+				if err = json.Unmarshal([]byte(jsonStr), &data); err != nil {
+					log.Error(err)
+					return
+				}
+				out, err := filter(data)
+				if err != nil {
+					log.Error("filter err: ", err)
+					return
+				}
+				cache.Put(name, fmt.Sprint(out))
+				log.Debug("Cached name: ", name, "; value: ", cache.Get(name))
+			}
 		}
+		cache.Clear()
 
 		err = cmd.Wait()
 		if err != nil {

@@ -4,6 +4,6 @@ executor:
   parser:
   - '$.proposals[0].voting_start_time'
   - '$.proposals[0].voting_end_time'
-  - '$.proposals[0].proposol_id'
+  - '$.proposals[0].proposal_id'
   exporter:
-  - 'proposal{"chain_id":"xxx","voting_start_time":"${voting_start_time}","voting_end_time":"${voting_end_time}"} ${proposol_id}'
+  - 'proposal{"chain_id":"xxx","voting_start_time":"${voting_start_time}","voting_end_time":"${voting_end_time}"} ${proposal_id}'
