@@ -3,13 +3,15 @@ package commands
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/wangfeiping/dyson/config"
 	"github.com/wangfeiping/log"
@@ -18,17 +20,51 @@ import (
 var starter = func() (cancel context.CancelFunc, err error) {
 	log.Info("Start...")
 
-	doJob()
+	running := true
+	t := time.NewTicker(time.Duration(
+		viper.GetInt64(config.FlegDuration)) * time.Second)
+	var wg sync.WaitGroup
+	cancel = func() {
+		running = false
+		t.Stop()
+		wg.Wait()
+		log.Info("Stopped.")
+	}
+
+	go func() {
+		wg.Add(1)
+		doJob()
+		for running {
+			select {
+			case <-t.C:
+				{
+					doJob()
+				}
+			default:
+				{
+					time.Sleep(100 * time.Millisecond)
+				}
+			}
+		}
+		log.Info("Done")
+		wg.Done()
+	}()
+
+	// prometheus.MustRegister(exporter.Collector())
+
+	// http.Handle("/metrics", promhttp.Handler())
+	// listen := viper.GetString(commands.FlagListen)
+	// err = http.ListenAndServe(listen, nil)
+	// log.Error(err)
 
 	return
 }
 
 func doJob() {
-	config.Load()
 	execs := config.GetAll()
 
 	for _, exe := range execs {
-		log.Info("execute: ", exe.Command)
+		log.Info("Command: ", exe.Command)
 		params := strings.Split(exe.Command, " ")
 		cmd := exec.Command(params[0], params[1:]...)
 		// fmt.Println("exec ", cmd.Args)
@@ -36,7 +72,7 @@ func doJob() {
 		// Wait方法获知命令结束后会关闭这个管道，一般不需要显式的关闭该管道。
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			log.Error("cmd.StdoutPipe err: ", err)
+			log.Error("Command stdout pipe err: ", err)
 			return
 		}
 
@@ -45,7 +81,7 @@ func doJob() {
 		err = cmd.Start()
 		// err = cmd.Run()
 		if err != nil {
-			log.Error("cmd.Start err: ", err)
+			log.Error("Command start err: ", err)
 			return
 		}
 
@@ -55,15 +91,15 @@ func doJob() {
 		for {
 			line, err2 := reader.ReadString('\n')
 			if err2 != nil || io.EOF == err2 {
-				log.Debug("Stdout EOF!")
+				log.Debug("Command stdout EOF!")
 				break
 			}
-			fmt.Println("Readed: ", line)
+			log.Debug("Result: ", line)
 		}
 
 		err = cmd.Wait()
 		if err != nil {
-			log.Error("cmd.Wait err: ", err)
+			log.Error("Command wait err: ", err)
 		}
 	}
 
@@ -79,7 +115,7 @@ func NewStartCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Int64P(config.FlegDuration, "d", 30, "The cycle time of the watch task")
-	cmd.Flags().StringP(config.FlagListen, "l", ":9900", "The listening address(ip:port) of exporter")
+	cmd.Flags().Int64P(config.FlegDuration, "d", 30, "cycle time of the execute task")
+	cmd.Flags().StringP(config.FlagListen, "l", ":9900", "listening address(ip:port) of exporter")
 	return cmd
 }

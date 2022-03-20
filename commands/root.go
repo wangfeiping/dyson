@@ -69,6 +69,7 @@ func initConfig() error {
 	if err := viper.ReadInConfig(); err == nil {
 		// stderr, so if we redirect output to json file, this doesn't appear
 		// fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		config.Load()
 	} else if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 		// ignore not found error, return other errors
 		return err
@@ -79,7 +80,7 @@ func initConfig() error {
 
 func initLogger() {
 	log.Config(log.RollingFileConfig())
-	log.Infof("starting at %s", getExecPath())
+	log.Infof("Starting at %s", getExecPath())
 }
 
 // getExecPath returns the execution path
