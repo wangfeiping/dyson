@@ -6,12 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"time"
 
+	// "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/yalp/jsonpath"
@@ -55,15 +58,16 @@ var starter = func() (cancel context.CancelFunc, err error) {
 
 	// prometheus.MustRegister(exporter.Collector())
 
-	// http.Handle("/metrics", promhttp.Handler())
-	// listen := viper.GetString(commands.FlagListen)
-	// err = http.ListenAndServe(listen, nil)
-	// log.Error(err)
+	http.Handle("/metrics", promhttp.Handler())
+	listen := viper.GetString(config.FlagListen)
+	err = http.ListenAndServe(listen, nil)
+	log.Error(err)
 
 	return
 }
 
 func doJob() {
+	cache := config.GetCache()
 	execs := config.GetAll()
 
 	for _, exe := range execs {
@@ -87,8 +91,6 @@ func doJob() {
 			log.Error("Command start err: ", err)
 			return
 		}
-
-		cache := config.GetCache()
 
 		//创建一个流来读取管道内内容这里逻辑是通过一行一行的读取的
 		reader := bufio.NewReader(stdout)
@@ -118,21 +120,27 @@ func doJob() {
 				}
 				out, err := filter(data)
 				if err != nil {
-					log.Error("filter err: ", err)
+					log.Error("jsonpath filter err: ", err)
 					return
 				}
 				cache.Put(name, fmt.Sprint(out))
 				log.Debug("Cached name: ", name, "; value: ", cache.Get(name))
 			}
 		}
-		cache.Clear()
 
 		err = cmd.Wait()
 		if err != nil {
 			log.Error("Command wait err: ", err)
 		}
+
+		if len(exe.Exporter) > 0 {
+			for _, exporter := range exe.Exporter {
+				log.Debug("exporter: ", exporter)
+			}
+		}
 	}
 
+	cache.Clear()
 }
 
 // NewStartCommand 创建 start/服务启动 命令
