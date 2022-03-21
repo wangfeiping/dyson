@@ -13,13 +13,14 @@ import (
 	"sync"
 	"time"
 
-	// "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/yalp/jsonpath"
 
 	"github.com/wangfeiping/dyson/config"
+	"github.com/wangfeiping/dyson/exporter"
 	"github.com/wangfeiping/log"
 )
 
@@ -56,7 +57,7 @@ var starter = func() (cancel context.CancelFunc, err error) {
 		wg.Done()
 	}()
 
-	// prometheus.MustRegister(exporter.Collector())
+	prometheus.MustRegister(exporter.Collector())
 
 	http.Handle("/metrics", promhttp.Handler())
 	listen := viper.GetString(config.FlagListen)
