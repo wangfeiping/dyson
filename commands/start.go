@@ -178,6 +178,6 @@ func NewStartCommand() *cobra.Command {
 	}
 
 	cmd.Flags().Int64P(config.FlegDuration, "d", 30, "cycle time of the execute task")
-	cmd.Flags().StringP(config.FlagListen, "l", ":9900", "listening address(ip:port) of exporter")
+	cmd.Flags().StringP(config.FlagListen, "l", ":25559", "listening address(ip:port) of exporter")
 	return cmd
 }
