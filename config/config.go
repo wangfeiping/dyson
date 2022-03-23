@@ -9,7 +9,7 @@ import (
 	"github.com/wangfeiping/log"
 )
 
-type Executor struct {
+type ExecutorConfig struct {
 	Expression []string `json:"expr,omitempty" yaml:"expr,omitempty"`
 	Command    string   `json:"command" yaml:"command"`
 	Parser     []string `json:"parser,omitempty" yaml:"parser,omitempty"`
@@ -17,23 +17,23 @@ type Executor struct {
 }
 
 var mux sync.RWMutex
-var execs []*Executor
+var configs []*ExecutorConfig
 
 func Reload() {
 	mux.Lock()
 	defer mux.Unlock()
 
-	if err := viper.UnmarshalKey(ConfigKey, &execs); err != nil {
+	if err := viper.UnmarshalKey(ConfigKey, &configs); err != nil {
 		log.Errorf("Load config error: %v", err)
 		return
 	}
 }
 
-func GetAll() []*Executor {
+func GetAll() []*ExecutorConfig {
 	mux.RLock()
 	defer mux.RUnlock()
 
-	return execs
+	return configs
 }
 
 func Load() {
@@ -52,16 +52,16 @@ func Save() {
 	parser := []string{"aaa", "bbb", "ccc"}
 	exporter := []string{"eee"}
 
-	exec := &Executor{
+	exec := &ExecutorConfig{
 		Expression: expr,
 		Command:    command,
 		Parser:     parser,
 		Exporter:   exporter}
-	execs = append(execs, exec)
+	configs = append(configs, exec)
 
 	v := viper.New()
 	v.SetConfigFile("test.yml") //viper.GetString(FlagConfig))
-	v.Set(ConfigKey, execs)
+	v.Set(ConfigKey, configs)
 	err := v.WriteConfig()
 	if err != nil {
 		log.Errorf("Failed: write config file error: %v", err)

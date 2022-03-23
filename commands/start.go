@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,9 +20,13 @@ import (
 	"github.com/yalp/jsonpath"
 
 	"github.com/wangfeiping/dyson/config"
+	"github.com/wangfeiping/dyson/execute"
 	"github.com/wangfeiping/dyson/exporter"
 	"github.com/wangfeiping/log"
 )
+
+var executors []*execute.Executor
+var exporters []*exporter.Exporter
 
 var starter = func() (cancel context.CancelFunc, err error) {
 	log.Info("Start...")
@@ -38,6 +41,8 @@ var starter = func() (cancel context.CancelFunc, err error) {
 		wg.Wait()
 		log.Info("Stopped.")
 	}
+
+	initExecutors()
 
 	go func() {
 		wg.Add(1)
@@ -71,7 +76,6 @@ var starter = func() (cancel context.CancelFunc, err error) {
 func doJob() {
 	cache := config.GetCache()
 	execs := config.GetAll()
-	var exporters []*exporter.Exporter
 
 	for _, exe := range execs {
 		log.Info("Command: ", exe.Command)
@@ -83,7 +87,7 @@ func doJob() {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			log.Error("Command stdout pipe err: ", err)
-			// return
+			return
 		}
 
 		cmd.Stderr = os.Stderr
@@ -92,7 +96,7 @@ func doJob() {
 		// err = cmd.Run()
 		if err != nil {
 			log.Error("Command start err: ", err)
-			// return
+			return
 		}
 
 		//创建一个流来读取管道内内容这里逻辑是通过一行一行的读取的
@@ -114,17 +118,17 @@ func doJob() {
 				filter, err := jsonpath.Prepare(parser)
 				if err != nil {
 					log.Error("jsonpath prepare err: ", err)
-					// return
+					return
 				}
 				var data interface{}
 				if err = json.Unmarshal([]byte(jsonStr), &data); err != nil {
 					log.Error(err)
-					// return
+					return
 				}
 				out, err := filter(data)
 				if err != nil {
 					log.Error("jsonpath filter err: ", err)
-					// return
+					return
 				}
 				cache.Put(name, fmt.Sprint(out))
 				log.Debug("Cached name: ", name, "; value: ", cache.Get(name))
@@ -134,37 +138,33 @@ func doJob() {
 		err = cmd.Wait()
 		if err != nil {
 			log.Error("Command wait err: ", err)
-			// return
+			return
 		}
 
-		if len(exe.Exporter) > 0 {
-			for _, exporterConfig := range exe.Exporter {
-				log.Debug("exporter: ", exporterConfig)
-				exp := exporter.NewExporter("proposal", "proposal on the blockchain",
-					[]string{"chain_id", "start", "end"})
-				var ms []*exporter.ExporterMetric
-				var value int
-				value, err = strconv.Atoi(cache.Get("proposal_id"))
-				if err != nil {
-					log.Error("Convert value err: ", err)
-					// return
-				}
-				metric := &exporter.ExporterMetric{
-					Name: "proposal",
-					Labels: []string{"testnet",
-						cache.Get("voting_start_time"),
-						cache.Get("voting_end_time")},
-					Value: float64(value)}
-				ms = append(ms, metric)
-				exp.SetMetrics(ms)
-				exporters = append(exporters, exp)
-				exporter.SetExporters(exporters)
-				log.Debug("metrics: ", len(ms))
-			}
-		}
 	}
 
+	// do export
+	doExport()
+
 	cache.Clear()
+}
+
+func initExecutors() {
+	execs := config.GetAll()
+
+	for _, exe := range execs {
+		executor := execute.NewExecutor(exe)
+		exporters = append(exporters, executor.GetExporters()...)
+		executors = append(executors, executor)
+	}
+
+	exporter.SetExporters(exporters)
+}
+
+func doExport() {
+	for _, executor := range executors {
+		executor.DoExport()
+	}
 }
 
 // NewStartCommand 创建 start/服务启动 命令

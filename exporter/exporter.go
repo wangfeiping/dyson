@@ -1,9 +1,13 @@
 package exporter
 
 import (
+	"strconv"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/wangfeiping/dyson/config"
+	"github.com/wangfeiping/log"
 )
 
 type ExporterMetric struct {
@@ -14,8 +18,9 @@ type ExporterMetric struct {
 }
 
 type Exporter struct {
-	desc    *prometheus.Desc
-	metrics []*ExporterMetric
+	desc          *prometheus.Desc
+	metricConfigs []*config.ExporterMetricConfig
+	metrics       []*ExporterMetric
 
 	mux sync.RWMutex
 }
@@ -42,4 +47,28 @@ func (e *Exporter) SetMetrics(metrics []*ExporterMetric) {
 	defer e.mux.Unlock()
 
 	e.metrics = metrics
+}
+
+func (e *Exporter) SetMetricConfigs(metrics []*config.ExporterMetricConfig) {
+	e.metricConfigs = metrics
+}
+
+func (e *Exporter) DoExport() []*ExporterMetric {
+	cache := config.GetCache()
+
+	var metrics []*ExporterMetric
+	// var value int
+	value, err := strconv.Atoi(cache.Get("proposal_id"))
+	if err != nil {
+		log.Error("Convert value err: ", err)
+		return metrics
+	}
+	metric := &ExporterMetric{
+		Name: "proposal",
+		Labels: []string{"testnet",
+			cache.Get("voting_start_time"),
+			cache.Get("voting_end_time")},
+		Value: float64(value)}
+	metrics = append(metrics, metric)
+	return metrics
 }
