@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -142,12 +143,18 @@ func doJob() {
 				exp := exporter.NewExporter("proposal", "proposal on the blockchain",
 					[]string{"chain_id", "start", "end"})
 				var ms []*exporter.ExporterMetric
+				var value int
+				value, err = strconv.Atoi(cache.Get("proposal_id"))
+				if err != nil {
+					log.Error("Convert value err: ", err)
+					// return
+				}
 				metric := &exporter.ExporterMetric{
 					Name: "proposal",
 					Labels: []string{"testnet",
 						cache.Get("voting_start_time"),
 						cache.Get("voting_end_time")},
-					Value: float64(0)}
+					Value: float64(value)}
 				ms = append(ms, metric)
 				exp.SetMetrics(ms)
 				exporters = append(exporters, exp)
