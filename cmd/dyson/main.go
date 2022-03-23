@@ -23,8 +23,6 @@ func main() {
 
 	rootCmd.AddCommand(
 		commands.NewStartCommand(),
-		// commands.NewAddCommand(addHandler),
-		// commands.NewCallCommand(callHandler),
 		commands.NewVersionCommand(versioner))
 
 	if err := rootCmd.Execute(); err != nil {

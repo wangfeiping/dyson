@@ -70,6 +70,7 @@ var starter = func() (cancel context.CancelFunc, err error) {
 func doJob() {
 	cache := config.GetCache()
 	execs := config.GetAll()
+	var exporters []*exporter.Exporter
 
 	for _, exe := range execs {
 		log.Info("Command: ", exe.Command)
@@ -81,7 +82,7 @@ func doJob() {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			log.Error("Command stdout pipe err: ", err)
-			return
+			// return
 		}
 
 		cmd.Stderr = os.Stderr
@@ -90,7 +91,7 @@ func doJob() {
 		// err = cmd.Run()
 		if err != nil {
 			log.Error("Command start err: ", err)
-			return
+			// return
 		}
 
 		//创建一个流来读取管道内内容这里逻辑是通过一行一行的读取的
@@ -112,17 +113,17 @@ func doJob() {
 				filter, err := jsonpath.Prepare(parser)
 				if err != nil {
 					log.Error("jsonpath prepare err: ", err)
-					return
+					// return
 				}
 				var data interface{}
 				if err = json.Unmarshal([]byte(jsonStr), &data); err != nil {
 					log.Error(err)
-					return
+					// return
 				}
 				out, err := filter(data)
 				if err != nil {
 					log.Error("jsonpath filter err: ", err)
-					return
+					// return
 				}
 				cache.Put(name, fmt.Sprint(out))
 				log.Debug("Cached name: ", name, "; value: ", cache.Get(name))
@@ -132,11 +133,26 @@ func doJob() {
 		err = cmd.Wait()
 		if err != nil {
 			log.Error("Command wait err: ", err)
+			// return
 		}
 
 		if len(exe.Exporter) > 0 {
-			for _, exporter := range exe.Exporter {
-				log.Debug("exporter: ", exporter)
+			for _, exporterConfig := range exe.Exporter {
+				log.Debug("exporter: ", exporterConfig)
+				exp := exporter.NewExporter("proposal", "proposal on the blockchain",
+					[]string{"chain_id", "start", "end"})
+				var ms []*exporter.ExporterMetric
+				metric := &exporter.ExporterMetric{
+					Name: "proposal",
+					Labels: []string{"testnet",
+						cache.Get("voting_start_time"),
+						cache.Get("voting_end_time")},
+					Value: float64(0)}
+				ms = append(ms, metric)
+				exp.SetMetrics(ms)
+				exporters = append(exporters, exp)
+				exporter.SetExporters(exporters)
+				log.Debug("metrics: ", len(ms))
 			}
 		}
 	}
