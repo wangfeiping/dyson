@@ -1,28 +1,9 @@
 executor:
-# 可根据执行命令返回json结果，获取数据，数据会在一次周期执行中缓存，执行周期结束当前缓存数据会清空
-# 查询奖励，默认以parser结尾的单词作为变量名
-- command: '/apps/cosmos/release/gaiad q distribution rewards [delegator-addr] [validator-addr] --output json'
-  parser:
-  - '$.rewards[0].amount'
-# 可根据之前缓存的数据，编写表达式，表达式为真则可执行当前配置命令
-# 如果奖励超过5000000，则提取奖励
-- expr:
-  - '${amount} > 5000000'
-  command: '/apps/cosmos/release/gaiad tx distribution withdraw-rewards [validator-addr] --from [key] --commission'
-# 查询余额，可以自定义变量名
-- command: '/apps/cosmos/release/gaiad q bank balances [delegator-addr] --output json'
-  parser:
-  - 'balance=$.balances[0].amount'
 # 可根据执行命令返回json结果，解析数据并生成监控指标
-- command: '/apps/cosmos/release/gaiad q gov proposals --output json --count-total --limit 10 --status voting_period'
+- command: '/apps/cosmos/release/gaiad q gov proposals --output json --count-total --limit 10 --status voting_period --reverse'
   parser:
   - '$.proposals[0].voting_start_time'
   - '$.proposals[0].voting_end_time'
-  - '$.proposals[0].proposol_id'
+  - '$.proposals[0].proposal_id'
   exporter:
-  - 'proposal{"chain_id":"xxx","voting_start_time":"${voting_start_time}","voting_end_time":"${voting_end_time}"} ${proposol_id}'
-# 如果账户余额大于5000000则执行配置命令，expr中可以配置简单的算式
-- expr:
-  - '${balance} > 5000000'
-  - 'balance=${balance}-100000'
-  command: '/apps/cosmos/release/gaiad gaiad tx staking delegate [validator-addr] [${balance}] --from [key]'
+  - 'proposal:The latest proposal in the voting.{"chain_id":"xxx","voting_start_time":"${voting_start_time}","voting_end_time":"${voting_end_time}"} ${proposal_id}'
