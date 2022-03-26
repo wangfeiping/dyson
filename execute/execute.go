@@ -3,6 +3,7 @@ package execute
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -25,16 +26,16 @@ func NewExecutor(executorConfig *config.ExecutorConfig) *Executor {
 	executor := &Executor{config: executorConfig}
 
 	if len(executor.config.Exporter) > 0 {
-		for _, exporterConfig := range executor.config.Exporter {
-			exp := exporter.NewExporter("proposal", "proposal on the blockchain",
-				[]string{"chain_id", "start", "end"})
+		for _, exporterStr := range executor.config.Exporter {
+			exporterConfig, metricConfig, err := parseExporter(exporterStr)
+			if err != nil {
+				log.Error(err.Error())
+				return nil
+			}
+			exp := exporter.NewExporter(exporterConfig.Name,
+				exporterConfig.Help,
+				exporterConfig.Labels)
 			var msc []*config.ExporterMetricConfig
-			metricConfig := &config.ExporterMetricConfig{
-				Name: "proposal",
-				Labels: []string{"dev",
-					"${voting_start_time}",
-					"${voting_end_time}"},
-				Value: "${proposal_id}"}
 			msc = append(msc, metricConfig)
 
 			exp.SetMetricConfigs(msc)
@@ -125,4 +126,55 @@ func (e *Executor) Export() {
 			exp.SetMetrics(exp.DoExport())
 		}
 	}
+}
+
+func parseExporter(exporterStr string) (*config.ExporterConfig, *config.ExporterMetricConfig, error) {
+	i := strings.Index(exporterStr, "{")
+	if i < 0 {
+		return nil, nil, errors.New("exporter config error")
+	}
+	headers := strings.Split(exporterStr[0:i], ":")
+	name := strings.Trim(headers[0], " ")
+	if len(name) == 0 {
+		return nil, nil, errors.New("exporter config error: no name")
+	}
+	exporterConfig := &config.ExporterConfig{
+		Name: name}
+	if len(headers) > 1 {
+		exporterConfig.Help = headers[1]
+	}
+
+	metricConfig := &config.ExporterMetricConfig{
+		Name: exporterConfig.Name}
+
+	exporterStr = exporterStr[i:]
+	i = strings.LastIndex(exporterStr, "${")
+	labelStr := exporterStr[0:i]
+	valueStr := exporterStr[i:]
+
+	metricConfig.Value = strings.Trim(valueStr, " ")
+
+	exporterConfig.Labels, metricConfig.Labels = parseLabels(labelStr)
+
+	log.Debug("exporter config: name=", exporterConfig.Name)
+	log.Debug("exporter config: help=", exporterConfig.Help)
+	log.Debug("exporter config: labels=", exporterConfig.Labels)
+
+	log.Debug("metric config: name=", metricConfig.Name)
+	log.Debug("metric config: labels=", metricConfig.Labels)
+	log.Debug("metric config: value=", metricConfig.Value)
+	return exporterConfig, metricConfig, nil
+}
+
+func parseLabels(labelStr string) ([]string, []string) {
+	var exporterLabels []string
+	var metricLabels []string
+	labelStr = strings.Trim(labelStr, " {}")
+	labels := strings.Split(labelStr, ",")
+	for _, labelStr := range labels {
+		label := strings.Split(labelStr, ":")
+		exporterLabels = append(exporterLabels, strings.Trim(label[0], " \""))
+		metricLabels = append(metricLabels, strings.Trim(label[1], " \""))
+	}
+	return exporterLabels, metricLabels
 }
