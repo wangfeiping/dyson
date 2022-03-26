@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -54,21 +55,39 @@ func (e *Exporter) SetMetricConfigs(metrics []*config.ExporterMetricConfig) {
 }
 
 func (e *Exporter) DoExport() []*ExporterMetric {
-	cache := config.GetCache()
 
 	var metrics []*ExporterMetric
-	// var value int
-	value, err := strconv.Atoi(cache.Get("proposal_id"))
-	if err != nil {
-		log.Error("Convert value err: ", err)
-		return metrics
+
+	for _, mConfig := range e.metricConfigs {
+
+		value, err := strconv.Atoi(checkVariable(mConfig.Value))
+		if err != nil {
+			log.Error("Convert value err: ", err)
+			return metrics
+		}
+
+		var labelValues []string
+		for _, lValue := range mConfig.Labels {
+			lValue = checkVariable(lValue)
+			labelValues = append(labelValues, lValue)
+		}
+
+		metric := &ExporterMetric{
+			Name:   mConfig.Name,
+			Labels: labelValues,
+			Value:  float64(value)}
+		metrics = append(metrics, metric)
 	}
-	metric := &ExporterMetric{
-		Name: "proposal",
-		Labels: []string{"testnet",
-			cache.Get("voting_start_time"),
-			cache.Get("voting_end_time")},
-		Value: float64(value)}
-	metrics = append(metrics, metric)
 	return metrics
+}
+
+func checkVariable(str string) string {
+	cache := config.GetCache()
+
+	if strings.HasPrefix(str, "$") {
+		value := strings.Trim(str, " ${}()")
+		return cache.Get(value)
+	}
+
+	return str
 }

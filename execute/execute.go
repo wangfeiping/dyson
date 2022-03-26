@@ -31,9 +31,9 @@ func NewExecutor(executorConfig *config.ExecutorConfig) *Executor {
 			var msc []*config.ExporterMetricConfig
 			metricConfig := &config.ExporterMetricConfig{
 				Name: "proposal",
-				Labels: []string{"testnet",
+				Labels: []string{"dev",
 					"${voting_start_time}",
-					"${voting_end_time)"},
+					"${voting_end_time}"},
 				Value: "${proposal_id}"}
 			msc = append(msc, metricConfig)
 
