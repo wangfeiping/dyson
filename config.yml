@@ -6,4 +6,4 @@ executor:
   - '$.proposals[0].voting_end_time'
   - '$.proposals[0].proposal_id'
   exporter:
-  - 'proposal:The latest proposal in the voting.{"chain_id":"xxx","voting_start_time":"${voting_start_time}","voting_end_time":"${voting_end_time}"} ${proposal_id}'
+  - 'proposal:The latest proposal in the voting.{"chain":"xxx","start":"${voting_start_time}","end":"${voting_end_time}"} ${proposal_id}'

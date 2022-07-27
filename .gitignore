@@ -15,3 +15,5 @@
 # vendor/
 build/
 logs/
+cmd/test/gaiad
+
