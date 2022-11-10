@@ -7,7 +7,7 @@ executor:
   parser:
   - 'validators=$'
   exporter:
-  - 'validators:Validators in block.last_commit.signatures.{"chain":"GOC","height":"${height}"} ${validators}'
+  - 'validators_last_commit_signatures:Validators in block.last_commit.signatures.{"chain":"GOC","height":"${height}"} ${validators}'
 # 可根据执行命令返回json结果，解析数据并生成监控指标
 - command: '/home/ubuntu/.gaia/cosmovisor/current/bin/gaiad q gov proposals --output json --count-total --limit 10 --status voting_period'
   parser:
