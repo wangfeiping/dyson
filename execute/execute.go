@@ -55,7 +55,7 @@ func (e *Executor) Execute() {
 	// params := strings.Split(e.config.Command, " ")
 	// cmd := exec.Command(params[0], params[1:]...)
 
-	exec.Command("bash", "-c", e.config.Command)
+	cmd := exec.Command("bash", "-c", e.config.Command)
 
 	// fmt.Println("exec ", cmd.Args)
 	// StdoutPipe方法返回一个在命令Start后与命令标准输出关联的管道。
