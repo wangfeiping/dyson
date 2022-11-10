@@ -57,14 +57,14 @@ func (e *Executor) Execute() {
 
 	cmd := exec.Command("bash", "-c", e.config.Command)
 
-	// // fmt.Println("exec ", cmd.Args)
-	// // StdoutPipe方法返回一个在命令Start后与命令标准输出关联的管道。
-	// // Wait方法获知命令结束后会关闭这个管道，一般不需要显式的关闭该管道。
-	// stdout, err := cmd.StdoutPipe()
-	// if err != nil {
-	// 	log.Error("Command stdout pipe err: ", err)
-	// 	return
-	// }
+	// fmt.Println("exec ", cmd.Args)
+	// StdoutPipe方法返回一个在命令Start后与命令标准输出关联的管道。
+	// Wait方法获知命令结束后会关闭这个管道，一般不需要显式的关闭该管道。
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Error("Command stdout pipe err: ", err)
+		return
+	}
 
 	cmd.Stderr = os.Stderr
 	// cmd.Dir = dir
@@ -118,11 +118,11 @@ func (e *Executor) Execute() {
 		}
 	}
 
-	// err = cmd.Wait()
-	// if err != nil {
-	// 	log.Error("Command wait err: ", err)
-	// 	return
-	// }
+	err = cmd.Wait()
+	if err != nil {
+		log.Error("Command wait err: ", err)
+		return
+	}
 }
 
 func (e *Executor) GetExporters() []*exporter.Exporter {
