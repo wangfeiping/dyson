@@ -52,8 +52,11 @@ func (e *Executor) Execute() {
 	cache := config.GetCache()
 
 	log.Info("Command: ", e.config.Command)
-	params := strings.Split(e.config.Command, " ")
-	cmd := exec.Command(params[0], params[1:]...)
+	// params := strings.Split(e.config.Command, " ")
+	// cmd := exec.Command(params[0], params[1:]...)
+
+	exec.Command("bash", "-c", e.config.Command)
+
 	// fmt.Println("exec ", cmd.Args)
 	// StdoutPipe方法返回一个在命令Start后与命令标准输出关联的管道。
 	// Wait方法获知命令结束后会关闭这个管道，一般不需要显式的关闭该管道。
@@ -85,7 +88,6 @@ func (e *Executor) Execute() {
 		log.Debug("Result: ", jsonStr)
 
 		for _, parser := range e.config.Parser {
-			log.Debug("Parser: ", parser)
 			var name string
 			if strings.ContainsRune(parser, '=') {
 				i := strings.Index(parser, "=")
@@ -95,6 +97,7 @@ func (e *Executor) Execute() {
 				i := strings.LastIndex(parser, ".")
 				name = parser[i+1:]
 			}
+			log.Debug("Parser: ", parser)
 			filter, err := jsonpath.Prepare(parser)
 			if err != nil {
 				log.Error("jsonpath prepare err: ", err)
