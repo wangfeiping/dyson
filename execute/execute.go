@@ -90,6 +90,7 @@ func (e *Executor) Execute() {
 			if strings.ContainsRune(parser, '=') {
 				i := strings.Index(parser, "=")
 				name = parser[:i]
+				parser = parser[i+1:]
 			} else {
 				i := strings.LastIndex(parser, ".")
 				name = parser[i+1:]
