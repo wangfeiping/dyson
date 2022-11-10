@@ -86,9 +86,14 @@ func (e *Executor) Execute() {
 
 		for _, parser := range e.config.Parser {
 			log.Debug("Parser: ", parser)
-			// if strings.ContainsRune(parser, '=') {
-			i := strings.LastIndex(parser, ".")
-			name := parser[i+1:]
+			var name string
+			if strings.ContainsRune(parser, '=') {
+				i := strings.Index(parser, "=")
+				name = parser[:i]
+			} else {
+				i := strings.LastIndex(parser, ".")
+				name = parser[i+1:]
+			}
 			filter, err := jsonpath.Prepare(parser)
 			if err != nil {
 				log.Error("jsonpath prepare err: ", err)
