@@ -1,13 +1,13 @@
 # Dyson
 Command wrapper capable of being invoked remotely or automatically executed
 
-The purpose of this project is to provide decentralized automatic maintenance and management of account assets (e.g., queries; Operate account assets as a proxy), and provide external calling functions (such as submitting transactions), but without the need to enter the password each time to unlock the key, and the caller does not need to have the private key.
+The purpose of this project is to provide decentralized automatic maintenance and management of account assets (e.g., Queries; Reverse proxy operation of private account assets of institutional agents). Includes features like: command executes automatically; configurable prometheus-based data metrics monitoring; APIs for remote calls, etc.
 
 ## Key features under consideration:
 
-* (Implemented) Program command agent execution
-* (Implemented) Provides configurable prometheus-based data metrics monitoring
-* (Not yet implemented) Provides APIs for remote calls
+* (Implemented) Program command executes automatically
+* (Implemented) Configurable prometheus-based data metrics monitoring
+* (Not yet implemented) APIs for remote calls
 * (Not yet implemented) Password caching and automatically entering passwords if necessary
 
 In order to achieve the project objectives, the following issues need to be considered:
