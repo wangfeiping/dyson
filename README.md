@@ -10,7 +10,7 @@ The purpose of this project is to provide decentralized automatic maintenance an
 * (Not yet implemented) APIs for remote calls
 * (Not yet implemented) Password caching and automatically entering passwords if necessary
 
-In order to achieve the project objectives, the following issues need to be considered:
+## In order to achieve the project objectives, the following issues need to be considered:
 
 ### Security
   * The password can be entered as needed each time the program is started, and the password is only cached in memory; (Password refers to the unlock password of the private key vault, through which the password is used to obtain the permission to use the account private key explicitly authorized in the configuration)
