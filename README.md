@@ -1,15 +1,16 @@
 # Dyson
 Command wrapper capable of being invoked remotely or automatically executed
 
-本项目目的是为了提供自动维护和管理(周期自动)账户资产(比如查询并委托账户资产)，同时提供外部调用(单次)功能(比如提交交易)，但无需每次输入密码解锁秘钥。
+The purpose of this project is to provide decentralized automatic maintenance and management of account assets (e.g., queries; Operate account assets as a proxy), and provide external calling functions (such as submitting transactions), but without the need to enter the password each time to unlock the key, and the caller does not need to have the private key.
 
-目前考虑的主要功能：
+Key features under consideration:
 
-* 密码缓存
-* 自动输入密码
-* 程序命令代理执行
+* (Implemented) Program command agent execution
+* (Implemented) Provides configurable prometheus-based data metrics monitoring
+* (Not yet implemented) Provides APIs for remote calls
+* (Not yet implemented) Password caching and automatically entering passwords if necessary
 
-为了实现项目目标，需考虑如下几个问题：
+In order to achieve the project objectives, the following issues need to be considered:
 
 * 安全
   * 每次启动程序时都需要输入密码，密码仅缓存在内存中；(密码指私钥库的解锁密码，通过密码以获得账户私钥)
