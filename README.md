@@ -12,24 +12,27 @@ The purpose of this project is to provide decentralized automatic maintenance an
 
 In order to achieve the project objectives, the following issues need to be considered:
 
-* Security
-  * 每次启动程序时都需要输入密码，密码仅缓存在内存中；(密码指私钥库的解锁密码，通过密码以获得账户私钥)
-  * 私钥库由原程序管理，本身不会对私钥解锁或通过其他手段获取，仅在程序需要签名确认交易时自动输入缓存的密码；
-  * 因为是通过系统调用实现程序的代理调用，处于安全考虑对外部调用的API需要进行白名单配置，没有配置的默认不可执行；
-* Internal command execution
-  * 开放全功能，可通过配置文件配置保存；
-  * 可借助原程序的私钥库功能，管理执行多账户操作；
-* Monitor
-  * prometheus exporter统计执行警告及异常数量；
-  * 各功能可用性，健康度；
-  * 内部命令及外部调用执行统计数；
-  * 通过配置命令生成监控指标？如：新提案
-* Logs
-  * 记录每次执行的命令；
-  * 记录执行警告及异常；
-* APIs for remote calls
-  * health检测接口
-  * 仅可执行单次调用命令；
+### Security
+  * The password can be entered as needed each time the program is started, and the password is only cached in memory; (Password refers to the unlock password of the private key vault, through which the password is used to obtain the permission to use the account private key explicitly authorized in the configuration)
+  * The private key vault is managed by the original program. The dyson program will not unlock the private key or obtain it by other means, and will only automatically enter the cached password when the program needs to sign and confirm the transaction;
+  * Because the proxy call of the program is implemented through system calls, APIs for external calls need to be whitelisted for security considerations, and the default is not executable without configuration;
+
+### Internal command execution
+  * Configurable;
+  * With the help of the key store function of the original program, multi-account operations can be managed and executed;
+
+### Monitor
+  * Count the number of execution warnings and exceptions;
+  * Functional availability, health;
+  * Execution statistics of internal commands and remote calls;
+  * Parse the returned data of configuration commands and generate monitoring metrics;
+
+### Logs
+  * Record the command executed each time;
+  * Record execution warnings and exceptions;
+
+### APIs for remote calls
+  * Only commands authorized by configuration in the whitelist can be executed;
 
 ## Usage and configuration instructions
 
