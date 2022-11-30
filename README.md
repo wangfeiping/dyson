@@ -3,7 +3,7 @@ Command wrapper capable of being invoked remotely or automatically executed
 
 The purpose of this project is to provide decentralized automatic maintenance and management of account assets (e.g., Queries; Allows agencies to provide reverse management of their clients' private assets). Includes features like: command executes automatically; configurable prometheus-based data metrics monitoring; APIs for remote calls, etc.
 
-## Key features under consideration:
+## Key features:
 
 * (Implemented) Program command executes automatically
 * (Implemented) Configurable prometheus-based data metrics monitoring
