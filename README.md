@@ -1,31 +1,95 @@
 # Dyson
 Command wrapper capable of being invoked remotely or automatically executed
 
-本项目目的是为了提供自动维护和管理(周期自动)账户资产(比如查询并委托账户资产)，同时提供外部调用(单次)功能(比如提交交易)，但无需每次输入密码解锁秘钥。
+The purpose of this project is to provide decentralized automatic maintenance and management of account assets (e.g., Queries; Allows agencies to provide reverse management of their clients' private assets). Includes features like: command executes automatically; configurable prometheus-based data metrics monitoring; APIs for remote calls, etc.
 
-目前考虑的主要功能：
+## Key features:
 
-* 密码缓存
-* 自动输入密码
-* 程序命令代理执行
+* (Implemented) Program command executes automatically
+* (Implemented) Configurable prometheus-based data metrics monitoring
+* (Not yet implemented) APIs for remote calls
+* (Not yet implemented) Password caching and automatically entering passwords if necessary
 
-为了实现项目目标，需考虑如下几个问题：
+## Issues need to be considered:
 
-* 安全
-  * 每次启动程序时都需要输入密码，密码仅缓存在内存中；(密码指私钥库的解锁密码，通过密码以获得账户私钥)
-  * 私钥库由原程序管理，本身不会对私钥解锁或通过其他手段获取，仅在程序需要签名确认交易时自动输入缓存的密码；
-  * 因为是通过系统调用实现程序的代理调用，处于安全考虑对外部调用的API需要进行白名单配置，没有配置的默认不可执行；
-* 内部命令执行
-  * 开放全功能，可通过配置文件配置保存；
-  * 可借助原程序的私钥库功能，管理执行多账户操作；
-* 外部调用API
-  * health检测接口
-  * 仅可执行单次调用命令；
-* 日志
-  * 记录每次执行的命令；
-  * 记录执行警告及异常；
-* 监控
-  * prometheus exporter统计执行警告及异常数量；
-  * 各功能可用性，健康度；
-  * 内部命令及外部调用执行统计数；
-  * 通过配置命令生成监控指标？如：新提案
+### Security
+  * The password can be entered as needed each time the program is started, and the password is only cached in memory; (Password refers to the unlock password of the private key vault, through which the password is used to obtain the permission to use the account private key explicitly authorized in the configuration)
+  * The private key vault is managed by the original program. The dyson program will not unlock the private key or obtain it by other means, and will only automatically enter the cached password when the program needs to sign and confirm the transaction;
+  * Because the proxy call of the program is implemented through system calls, APIs for external calls need to be whitelisted for security considerations, and the default is not executable without configuration;
+
+### Command execution
+  * Configurable;
+  * With the help of the key store function of the original program, multi-account operations can be managed and executed;
+
+### Monitor
+  * Count the number of execution warnings and exceptions;
+  * Functional availability, health;
+  * Execution statistics of internal commands and remote calls;
+  * Parse the returned data of configuration commands and generate monitoring metrics;
+
+### Logs
+  * Record the command executed each time;
+  * Record execution warnings and exceptions;
+
+### APIs for remote calls
+  * Only commands authorized by configuration in the whitelist can be executed;
+
+## Instructions
+
+### Build
+
+```bash
+# Clone
+$ git clone https://github.com/wangfeiping/dyson.git
+$ cd ./dyson/
+
+# Look for the tag
+$ git tag
+v0.0.2
+
+# Check out the source code
+$ git checkout v0.0.2
+
+# Build
+$ sh ./build.sh
+$ ./build/dyson version
+```
+
+### Config
+
+```plain
+executor:
+# Query the block height
+- command: '/path_to/gaiad q block'
+  parser:
+# The returned data is parsed by JSON Path and the result is cached in height.
+  - '$.block.header.height'
+# Count the number of validators in staking.
+- command: '/path_to/gaiad q staking validators -o json | jq ''.validators | length'''
+  parser:
+# The result is cached in validators_staking.
+  - 'validators_staking=$'
+  exporter:
+# Generate monitoring metric data.
+# metric_name:metric_description{"label_name":"label_value"} ${cached_data}
+  - 'validators_staking:Validators in staking.{"chain":"GOC","height":"${height}"} ${validators_staking}'
+# Query proposals, parse and generate monitoring metrics
+- command: '/path_to/gaiad q gov proposals --output json --count-total --limit 10 --status voting_period'
+  parser:
+  - '$.proposals[0].voting_start_time'
+  - '$.proposals[0].voting_end_time'
+  - '$.proposals[0].proposal_id'
+  exporter:
+  - 'proposal:The proposal in voting period.{"chain":"GOC","start":"${voting_start_time}","end":"${voting_end_time}"} ${proposal_id}'
+```
+
+### Run
+
+```bash
+# Show help info
+$ dyson -h
+$ dyson start -h
+
+# Use the ./config.yml to execute every 60 seconds and listen on port 25559
+$ dyson start -c ./config.yml -d 60 -l :25559
+```
