@@ -34,6 +34,62 @@ The purpose of this project is to provide decentralized automatic maintenance an
 ### APIs for remote calls
   * Only commands authorized by configuration in the whitelist can be executed;
 
-## Usage and configuration instructions
+## Instructions
 
+### Build
 
+```bash
+# Clone
+$ git clone https://github.com/wangfeiping/dyson.git
+$ cd ./dyson/
+
+# Look for the tag
+$ git tag
+v0.0.2
+
+# Check out the source code
+$ git checkout v0.0.2
+
+# Build
+$ sh ./build.sh
+$ ./build/dyson version
+```
+
+### Config
+
+```plain
+executor:
+# Query the block height
+- command: '/path_to/gaiad q block'
+  parser:
+# The returned data is parsed by JSON Path and the result is cached in height.
+  - '$.block.header.height'
+# Count the number of validators in staking.
+- command: '/path_to/gaiad q staking validators -o json | jq ''.validators | length'''
+  parser:
+# The result is cached in validators_staking.
+  - 'validators_staking=$'
+  exporter:
+# Generate monitoring metric data.
+# metric_name:metric_description{"label_name":"label_value"} ${cached_data}
+  - 'validators_staking:Validators in staking.{"chain":"GOC","height":"${height}"} ${validators_staking}'
+# Query proposals, parse and generate monitoring metrics
+- command: '/path_to/gaiad q gov proposals --output json --count-total --limit 10 --status voting_period'
+  parser:
+  - '$.proposals[0].voting_start_time'
+  - '$.proposals[0].voting_end_time'
+  - '$.proposals[0].proposal_id'
+  exporter:
+  - 'proposal:The proposal in voting period.{"chain":"GOC","start":"${voting_start_time}","end":"${voting_end_time}"} ${proposal_id}'
+```
+
+### Run
+
+```bash
+# Show help info
+$ dyson -h
+$ dyson start -h
+
+# Use the ./config.yml to execute every 60 seconds and listen on port 25559
+$ dyson start -c ./config.yml -d 60 -l :25559
+```
